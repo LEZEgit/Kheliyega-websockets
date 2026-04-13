@@ -18,10 +18,10 @@ matchRouter.get("/", async (req, res) => {
   if (!parsed.success) {
     return res
       .status(400)
-      .json({ error: "Invalid query.", details: JSON.stringify(parsed.error) });
+      .json({ error: "Invalid query.", details: parsed.error.issues });
   }
 
-  const limit = Math.min(parsed.data.limit || MAX_LIMIT);
+ const limit = Math.min(parsed.data.limit ?? 50, MAX_LIMIT);
 
   try {
     const data = await db
@@ -42,7 +42,7 @@ matchRouter.post("/", async (req, res) => {
   if (!parsed.success) {
       return res.status(400).json({
           error: "Invalid payload.",
-          details: JSON.stringify(parsed.error),
+          details: parsed.error.issues,
         });
     }
     
@@ -58,7 +58,7 @@ matchRouter.post("/", async (req, res) => {
         endTime: new Date(endTime),
         homeScore: homeScore ?? 0,
         awayScore: awayScore ?? 0,
-        status: getMatchStatus(startTime, endTime),
+        status: getMatchStatus(startTime, endTime) ?? "scheduled",
       })
       .returning();
 

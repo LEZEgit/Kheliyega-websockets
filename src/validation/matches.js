@@ -23,20 +23,10 @@ export const createMatchSchema = z
     sport: z.string().min(1, "Sport is required and cannot be empty"),
     homeTeam: z.string().min(1, "Home team is required and cannot be empty"),
     awayTeam: z.string().min(1, "Away team is required and cannot be empty"),
-    startTime: z
-      .string()
-      .refine(
-        (value) => !isNaN(Date.parse(value)),
-        "startTime must be a valid ISO date string",
-      ),
-    endTime: z
-      .string()
-      .refine(
-        (value) => !isNaN(Date.parse(value)),
-        "endTime must be a valid ISO date string",
-      ),
-    homeScore: z.coerce.number().int().nonnegative().optional(),
-    awayScore: z.coerce.number().int().nonnegative().optional(),
+    startTime: z.iso.datetime({local: true}),
+    endTime: z.iso.datetime({local: true}),
+    homeScore: z.number().int().nonnegative().optional(),
+    awayScore: z.number().int().nonnegative().optional(),
   })
   .superRefine((data, ctx) => {
     const startTime = new Date(data.startTime);
@@ -53,6 +43,6 @@ export const createMatchSchema = z
 
 // Schema for updating match scores
 export const updateScoreSchema = z.object({
-  homeScore: z.coerce.number().int().nonnegative(),
-  awayScore: z.coerce.number().int().nonnegative(),
+  homeScore: z.number().int().nonnegative(),
+  awayScore: z.number().int().nonnegative(),
 });
