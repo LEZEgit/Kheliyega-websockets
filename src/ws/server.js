@@ -2,13 +2,39 @@ import { WebSocket, WebSocketServer } from "ws";
 import { wsArcjet } from "../config/arcjet.js";
 
 const matchSubscribers = new Map();
+const MAX_SUBSCRIPTIONS_PER_SOCKET = 100;
+const MAX_MATCH_ID = 1000000; // Sensible upper bound for match IDs
 
 function subscribe(matchId, socket) {
+  // Validate matchId: must be positive integer and within bounds
+  if (!Number.isInteger(matchId) || matchId <= 0 || matchId > MAX_MATCH_ID) {
+    return { success: false, error: "Invalid match ID" };
+  }
+
+  // Initialize socket.subscriptions if not already done
+  if (!socket.subscriptions) {
+    socket.subscriptions = new Set();
+  }
+
+  // Guard against duplicate subscriptions
+  if (socket.subscriptions.has(matchId)) {
+    return { success: false, error: "Already subscribed to this match" };
+  }
+
+  // Enforce per-socket subscription cap
+  if (socket.subscriptions.size >= MAX_SUBSCRIPTIONS_PER_SOCKET) {
+    return { success: false, error: "Subscription limit reached" };
+  }
+
+  // Add to matchSubscribers only if this is a new subscription
   if (!matchSubscribers.has(matchId)) {
     matchSubscribers.set(matchId, new Set());
   }
 
   matchSubscribers.get(matchId).add(socket);
+  socket.subscriptions.add(matchId);
+
+  return { success: true };
 }
 
 function unsubscribe(matchId, socket) {
@@ -65,12 +91,20 @@ function handleMessage(socket, data) {
     message = JSON.parse(data.toString());
   } catch {
     sendJson(socket, { type: "error", message: "Invalid JSON" });
+    return;
   }
 
-  if (message?.type === "subscribe" && Number.isInteger(message.matchId)) {
-    subscribe(message.matchId, socket);
-    socket.subscriptions.add(message.matchId);
-    sendJson(socket, { type: "subscribed", matchId: message.matchId });
+  if (message?.type === "subscribe") {
+    const result = subscribe(message.matchId, socket);
+    if (result.success) {
+      sendJson(socket, { type: "subscribed", matchId: message.matchId });
+    } else {
+      sendJson(socket, {
+        type: "error",
+        message: result.error,
+        matchId: message.matchId,
+      });
+    }
   }
 
   if (message?.type === "unsubscribe" && Number.isInteger(message.matchId)) {
@@ -148,6 +182,10 @@ export function attachWebSocketServer(server) {
       handleMessage(socket, data);
     });
 
+    socket.on("error", (error) => {
+      console.error("WebSocket error", error);
+      socket.terminate();
+    });
     socket.on("error", () => {
       console.error;
       socket.terminate();
