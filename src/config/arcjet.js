@@ -8,10 +8,10 @@ export const httpArcjet = arcjetKey
       key: arcjetKey,
       rules: [
         shield({ mode: arcjetMode }),
-        detectBot({
-          mode: arcjetMode,
-          allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"],
-        }),
+        // detectBot({
+        //   mode: arcjetMode,
+        //   allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW", "CATEGORY:UNKNOWN_BOT"],
+        // }),
         slidingWindow({ mode: arcjetMode, interval: "10s", max: 50 }),
       ],
     })
@@ -21,10 +21,10 @@ export const wsArcjet = arcjetKey
       key: arcjetKey,
       rules: [
         shield({ mode: arcjetMode }),
-        detectBot({
-          mode: arcjetMode,
-          allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"],
-        }),
+        // detectBot({
+        //   mode: arcjetMode,
+        //   allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW", "CATEGORY:UNKNOWN_BOT"],
+        // }),
         slidingWindow({ mode: arcjetMode, interval: "2s", max: 5 }),
       ],
     })
